@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  influxdb:
+    image: influxdb:2.6
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=my-user           
+      - DOCKER_INFLUXDB_INIT_PASSWORD=my-password
+      - DOCKER_INFLUXDB_INIT_ORG=ISPC
+      - DOCKER_INFLUXDB_INIT_BUCKET=cgrh_db_influx     
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-token   
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - ./influx-init:/influx-init      # Monta el directorio local "influx-init" en "/influx-init" en el contenedor
+    entrypoint: ["/bin/sh", "/influx-init/01_init_influx.sh"]  # Uso de la ruta absoluta en el contenedor
+    networks:
+      - ISPC_Proyecto_II
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=cgrh_db_mysql
+      - MYSQL_USER=device_reg_mysql
+      - MYSQL_PASSWORD=device_reg
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      - ISPC_Proyecto_II
+    restart: unless-stopped
+
+networks:
+  ISPC_Proyecto_II:
+    driver: bridge
+
+volumes:
+  influxdb_data:
+  mysql_data:

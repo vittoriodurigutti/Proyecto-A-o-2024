@@ -1,0 +1,5 @@
+Flask
+mysql-connector-python
+influxdb-client
+prometheus_client
+
