@@ -10,7 +10,7 @@
 #include <BLE2902.h>
 #include <LoRa.h>
 #include <HTTPClient.h>
-#include <ArduinoJson.h>   // Biblioteca para manejar JSON
+#include <ArduinoJson.h>   
 
 // Configuración de pines
 #define TFT_CS    5
@@ -144,17 +144,8 @@ int medirNivelAgua() {
   return distancia;
 }
 
-// Procesar datos recibidos vía BLE (asumiendo que el mensaje se envía en formato JSON)
-// Ejemplo de mensaje recibido:
-// {
-//    "id": "child_123",
-//    "temp": 25.5,
-//    "hum": 40,
-//    "luz": 75,
-//    "hum_cap": 300,
-//    "hum_res": 150,
-//    "nivel_agua": 12
-// }
+// Procesar datos recibidos vía BLE ( envía en formato JSON)
+
 void procesarDatosBLE() {
   StaticJsonDocument<256> doc;
   DeserializationError error = deserializeJson(doc, bleData);

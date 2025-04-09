@@ -3,6 +3,70 @@ from app.utils.db import get_mysql_connection, get_influxdb_client
 from app.metrics import MYSQL_WRITE_SUCCESS, MYSQL_WRITE_FAILURE, INFLUX_WRITE_SUCCESS, INFLUX_WRITE_FAILURE
 import os
 
+def register_device(gateway_id, email):
+    """
+    Registra el dispositivo en la base de datos MySQL.
+    Verifica si ya existe un dispositivo con el gateway_id en la tabla 'dispositivo'.
+    Si no existe, busca el usuario por email en la tabla 'usuario' y, si se encuentra,
+    inserta un nuevo registro en 'dispositivo'.
+    
+    Retorna un diccionario con la información:
+      - status: 'registered' o 'exists' o 'user_not_found'
+      - device_id: id autogenerado (si se registró)
+      - message: mensaje informativo
+    """
+    try:
+        connection = get_mysql_connection()
+        cursor = connection.cursor()
+        
+        # Verificar si el dispositivo ya está registrado
+        cursor.execute("SELECT id FROM dispositivo WHERE identificador = %s", (gateway_id,))
+        dispositivo_existente = cursor.fetchone()
+        
+        if dispositivo_existente:
+            return {
+                "status": "exists",
+                "device_id": dispositivo_existente[0],
+                "message": "El dispositivo ya está registrado."
+            }
+        
+        # Buscar usuario por email en la tabla 'usuario'
+        cursor.execute("SELECT id FROM usuario WHERE email = %s", (email,))
+        usuario = cursor.fetchone()
+        
+        if not usuario:
+            return {
+                "status": "user_not_found",
+                "message": "No existe un usuario con el email proporcionado. Registre el usuario primero."
+            }
+        
+        user_id = usuario[0]
+        # Insertar el nuevo dispositivo
+        cursor.execute(
+            "INSERT INTO dispositivo (identificador, id_usuario) VALUES (%s, %s)",
+            (gateway_id, user_id)
+        )
+        connection.commit()
+        device_id = cursor.lastrowid
+        
+        logging.info("Dispositivo %s registrado para el usuario %s", gateway_id, user_id)
+        return {
+            "status": "registered",
+            "device_id": device_id,
+            "message": "Dispositivo registrado exitosamente."
+        }
+    except Exception as e:
+        connection.rollback()
+        logging.error("Error al registrar dispositivo %s: %s", gateway_id, str(e))
+        return {
+            "status": "error",
+            "message": f"Error al registrar dispositivo: {str(e)}"
+        }
+    finally:
+        cursor.close()
+        connection.close()
+
+
 def write_to_mysql(data):
     """
     Inserta la información en MySQL.
@@ -26,7 +90,7 @@ def write_to_mysql(data):
         cursor = connection.cursor()
         sql = (
             "INSERT INTO device_data "
-            "(device_id, temperature, humidity, level_water, light, soil_cap, soil_res) "
+            "(id, temp, hum, nivel_agua, luz, hum_cap, hum_res)"
             "VALUES (%s, %s, %s, %s, %s, %s, %s)"
         )
         cursor.execute(sql, (
@@ -111,3 +175,4 @@ def process_device_data(data):
         logging.error("Falló la escritura en InfluxDB para el dispositivo %s", data.get("child_id"))
 
     return status
+

@@ -26,6 +26,22 @@ CREATE TABLE IF NOT EXISTS dispositivo (
         ON UPDATE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS dispositivos_mediciones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dispositivo_identificador VARCHAR(100) NOT NULL,
+    temp FLOAT NOT NULL,
+    hum FLOAT NOT NULL,
+    nivel_agua FLOAT NOT NULL,
+    luz FLOAT NOT NULL,
+    hum_cap FLOAT NOT NULL,
+    hum_res FLOAT NOT NULL,
+    fecha_medicion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_dispositivo_identificador 
+        FOREIGN KEY (dispositivo_identificador)
+        REFERENCES dispositivo(identificador)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
 -----------------------------------------------------
 -- Creación del usuario para operaciones en ambas tablas (data_admin)
 -----------------------------------------------------

@@ -1,0 +1,3 @@
+Flask
+pymysql
+prometheus_client
